@@ -9,7 +9,7 @@ import (
 	"syscall"
 
 	"github.com/sirupsen/logrus"
-	// "github.com/tools/jot/service"
+	"github.com/tools/simple/service"
 )
 
 
@@ -40,7 +40,7 @@ func main() {
 		fmt.Println("Unable to read config file ", err)
 		os.Exit(1)
 	}
-	if jotService := service.NewJOTRestService(configBytes, *verbose); jotService != nil {
+	if jotService := service.NewSimpleRestService(configBytes, *verbose); jotService != nil {
 		stopSignal := make(chan bool)
 		termination := make(chan os.Signal)
 		signal.Notify(termination, syscall.SIGINT, syscall.SIGTERM)
