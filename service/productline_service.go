@@ -31,9 +31,24 @@ func (productlineservice *ProductlineService) SingleGet(c *gin.Context) {
 	c.JSON(myOutput.StatusCode, myOutput)
 }
 
+//create
+func(productlineservice *ProductlineService) CreateProductlineservice(c *gin.Context){
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	var input model.Productline
+	c.ShouldBind(&input)
+	productlineRepository := new(repository.ProductlineRepository)
+	myOutput := productlineRepository.CreateProductline(input)
+
+	c.JSON(myOutput.StatusCode, myOutput)
+}
+
 func (productlineservice *ProductlineService) AddRouters(router *gin.Engine) {
 	router.GET("/apl", productlineservice.GetAll)
 	router.POST("/spl", productlineservice.SingleGet)
+	router.POST("/ipl", productlineservice.CreateProductlineservice)
 }
+
+
 
 	
