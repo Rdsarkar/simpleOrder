@@ -43,10 +43,24 @@ func(productlineservice *ProductlineService) CreateProductlineservice(c *gin.Con
 	c.JSON(myOutput.StatusCode, myOutput)
 }
 
+
+//delete
+func(productlineservice *ProductlineService) DeleteProductlineservice(c *gin.Context){
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	var input model.Productline
+	c.ShouldBind(&input)
+	productlineRepository := new(repository.ProductlineRepository)
+	myOutput := productlineRepository.DeleteProductline(input)
+
+	c.JSON(myOutput.StatusCode, myOutput)
+}
+
 func (productlineservice *ProductlineService) AddRouters(router *gin.Engine) {
 	router.GET("/apl", productlineservice.GetAll)
 	router.POST("/spl", productlineservice.SingleGet)
 	router.POST("/ipl", productlineservice.CreateProductlineservice)
+	router.DELETE("/dpl", productlineservice.DeleteProductlineservice)
 }
 
 

@@ -48,7 +48,7 @@ func (productlineRepository *ProductlineRepository) GetAllProductlines() customm
 //GetByID
 func (productlineRepository *ProductlineRepository) GetProductlineByID(c1 model.Productline) custommodel.ResponseDto {
 	var output custommodel.ResponseDto
-	if c1.Id2 <= 0 {
+	if c1.Id <= 0 {
 		output.Message = "Invalid ID"
 		output.IsSuccess = false
 		output.Payload = nil
@@ -61,7 +61,7 @@ func (productlineRepository *ProductlineRepository) GetProductlineByID(c1 model.
 	sqlDB, _ := db.DB()
 	defer sqlDB.Close()
 	var o model.Productline
-	result := db.Where(&model.Productline{Id2: c1.Id2}).First(&o)
+	result := db.Where(&model.Productline{Id: c1.Id}).First(&o)
 
 	if result.RowsAffected == 0 {
 		output.Message = "No Data found for this ID"
@@ -82,12 +82,11 @@ func (productlineRepository *ProductlineRepository) GetProductlineByID(c1 model.
 	return output
 }
 
-
 //Create
-func (productlineRepository *ProductlineRepository) CreateProductline(c1 model.Productline) custommodel.ResponseDto{
+func (productlineRepository *ProductlineRepository) CreateProductline(c1 model.Productline) custommodel.ResponseDto {
 	var output custommodel.ResponseDto
-	
-	if c1.Id2 <= 0 {
+
+	if c1.Id <= 0 {
 		output.Message = "Invalid ID"
 		output.IsSuccess = false
 		output.Payload = nil
@@ -95,44 +94,41 @@ func (productlineRepository *ProductlineRepository) CreateProductline(c1 model.P
 		return output
 	}
 
-	
 	var wg sync.WaitGroup
 	wg.Add(1)
 
-	go func(){
+	go func() {
 		defer wg.Done()
 		db := util.CreateConnectionUsingGormToCommonSchema()
-		sqlDB, _:= db.DB()
+		sqlDB, _ := db.DB()
 		defer sqlDB.Close()
 
-		tx :=  db.Begin()
+		tx := db.Begin()
 		tx.SavePoint("savepoint1")
 
-		
-		
 		var input1 model.Productline
-		hhh := db.Where(&model.Productline{Id2: c1.Id2}).First(&input1)
-		
+		hhh := db.Where(&model.Productline{Id: c1.Id}).First(&input1)
+
 		if hhh.RowsAffected != 0 {
 			output.Message = "ID already Exists!!"
 			output.IsSuccess = false
 			output.Payload = nil
 			output.StatusCode = http.StatusConflict
 			tx.RollbackTo("savepoint1")
-			return 
+			return
 		}
 
 		// defer wg.Done()
-		_ = tx.Where("id2=?", c1.Id2).First(&c1)
+		_ = tx.Where("id2=?", c1.Id).First(&c1)
 		result := tx.Create(&c1)
 		if result.RowsAffected == 0 {
-		output.Message = "Country creation failed"
-		output.IsSuccess = false
-		output.Payload = nil
-		output.StatusCode = http.StatusInternalServerError
-		tx.RollbackTo("savepoint1")
-		return 
-	}
+			output.Message = "Country creation failed"
+			output.IsSuccess = false
+			output.Payload = nil
+			output.StatusCode = http.StatusInternalServerError
+			tx.RollbackTo("savepoint1")
+			return
+		}
 
 		tx.Commit()
 		output.Message = "Success"
@@ -143,4 +139,64 @@ func (productlineRepository *ProductlineRepository) CreateProductline(c1 model.P
 	wg.Wait()
 	return output
 }
+
+//delete
+func (productlineRepository *ProductlineRepository) DeleteProductline(c1 model.Productline) custommodel.ResponseDto {
+	var output custommodel.ResponseDto
+	if c1.Id <= 0 {
+		output.Message = "Invalid ID"
+		output.IsSuccess = false
+		output.Payload = nil
+		output.StatusCode = http.StatusBadRequest
+		return output
+	}
+
+	//database connection
+	db := util.CreateConnectionUsingGormToCommonSchema()
+	sqlDB, _ := db.DB()
+	defer sqlDB.Close()
+
+	tx := db.Begin()
+	tx.SavePoint("nox")
+
+	var o model.Product
+	o.Productlineid = c1.Id
+	productID := db.Where(model.Product{Productlineid: c1.Id}).First(&o)
+	if productID.RowsAffected != 0 {
+		output.Message = "this Productline has already existing products"
+		output.IsSuccess = false
+		output.Payload = nil
+		output.StatusCode = http.StatusConflict
+		tx.RollbackTo("nox")
+		return output
+	}
+
+	result := tx.Where(model.Productline{Id: c1.Id}).First(&c1.Id)
+
+	if result.RowsAffected == 0 {
+		output.Message = "No Data found for this ID"
+		output.IsSuccess = false
+		output.Payload = nil
+		output.StatusCode = http.StatusNotFound
+		tx.RollbackTo("nox")
+		return output
+	}
+
 	
+	result2 := db.Where("Id2 = ?", c1.Id).Delete(&c1)
+	if result2.RowsAffected == 0 {
+		output.Message = "Delete failed"
+		output.IsSuccess = false
+		output.Payload = nil
+		output.StatusCode = http.StatusInternalServerError
+		tx.RollbackTo("nox")
+		return output
+	}
+	tx.Commit()
+	output.Message = "Product Deleted Successfully"
+	output.IsSuccess = true
+	output.Payload = nil
+	output.StatusCode = http.StatusOK
+	return output
+
+}
